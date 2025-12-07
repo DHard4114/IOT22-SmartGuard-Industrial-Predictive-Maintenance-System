@@ -16,6 +16,7 @@ jakarta_tz = pytz.timezone('Asia/Jakarta')
 # Catatan: Data akan reset jika server idle lama (sifat Serverless)
 system_state = {
     "vibration": 0.0,
+    "temperature": 0.0,
     "status": "SAFE",
     "timestamp": "N/A"
 }
@@ -39,13 +40,14 @@ def home():
 def receive_log():
     try:
         data = request.json
-        # Expected JSON: {"vibration": 15.2, "status": "DANGER"}
+        # Expected JSON: {"vibration": 15.2, "temp": 30.5, "status": "DANGER"}
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
         current_time = datetime.now(jakarta_tz).strftime("%Y-%m-%d %H:%M:%S")
 
         system_state["vibration"] = float(data.get("vibration", 0.0))
+        system_state["temperature"] = float(data.get("temperature", 0.0))
         system_state["status"] = data.get("status", "UNKNOWN")
         system_state["timestamp"] = current_time
 
@@ -54,8 +56,8 @@ def receive_log():
             # Simpan ke database (use NOW() to avoid string->timestamp issues)
             with get_db() as conn, conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO incidents (ts, vibration, status) VALUES (NOW(), %s, %s)",
-                    (system_state["vibration"], system_state["status"]),
+                    "INSERT INTO incidents (ts, vibration, temperature, status) VALUES (%s, %s, %s, %s)",
+                    (current_time, system_state["vibration"], system_state["temperature"], system_state["status"]),
                 )
         return jsonify({"message": "Data logged", "server_time": current_time}), 200
     except Exception as e:
@@ -82,6 +84,7 @@ def get_status():
             incident_history.append({
                 "timestamp": ts_str,
                 "vibration": float(row["vibration"]),
+                "temperature": float(row["temperature"]),
                 "status": row["status"],
             })
     except Exception:
@@ -164,6 +167,10 @@ def get_status():
                             <div class="label">Vibration</div>
                             <div class="value">{{ '%.2f' % current_status.vibration }} g</div>
                         </div>
+                        <div>
+                            <div class="label">Temperature</div>
+                            <div class="value">{{ '%.2f' % current_status.temperature }} °C</div>
+                        </div>
                     </div>
                 </div>
 
@@ -187,6 +194,7 @@ def get_status():
                                             <td>{{ item.timestamp }}</td>
                                             <td><span class="{{ pcl }}">{{ ss }}</span></td>
                                             <td>{{ '%.2f' % item.vibration }}</td>
+                                            <td>{{ '%.2f' % item.temperature }} °C</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

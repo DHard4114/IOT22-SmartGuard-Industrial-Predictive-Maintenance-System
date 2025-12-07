@@ -184,6 +184,7 @@ def get_status():
                                         <th>Time (Asia/Jakarta)</th>
                                         <th>Status</th>
                                         <th>Vibration (g)</th>
+                                        <th>Temperature (°C)</th>
                                     </tr>
                                 </thead>
                                 <tbody>

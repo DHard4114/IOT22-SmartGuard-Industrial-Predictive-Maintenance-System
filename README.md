@@ -66,8 +66,6 @@ Sistem terdiri dari dua subsistem utama:
 1.  **Subsistem Sensor:** Menggunakan ESP32 yang ditenagai baterai Li-Ion. Sensor MPU6050 dihubungkan melalui protokol I2C (SDA: GPIO 21, SCL: GPIO 22).
 2.  **Subsistem Gateway:** Menggunakan ESP32 dengan daya USB. Relay Module (GPIO 26) memutus jalur positif motor DC, dan Buzzer (GPIO 27) sebagai indikator audio.
 
-*(Space untuk gambar skematik/diagram blok sistem)*
-
 #### 2.2 SOFTWARE DEVELOPMENT
 
 **A. Algoritma Sensor Node (Deep Sleep & Vektor)**
@@ -81,7 +79,7 @@ Gateway menerapkan *Dual-Core Processing* menggunakan FreeRTOS:
 *   **Core 1 (TaskLogic):** Mengambil data dari Queue. Jika nilai > Threshold, GPIO Relay dipicu seketika. Untuk pengiriman data ke WiFi, digunakan `xSemaphoreMutex` agar tidak terjadi tabrakan memori saat mengakses *stack* WiFi.
 
 **C. Cloud Backend (Flask API)**
-Backend dikembangkan dengan Python Flask. Endpoint `/api/log` menerima metode POST berisi JSON data. Data disimpan sementara dalam struktur data list (Python List) yang dapat diakses kembali melalui endpoint GET `/api/status`.
+Backend dikembangkan dengan Python Flask. Endpoint `/log` menerima metode POST berisi JSON data. Data disimpan di dalam database berbasis Neon yang dapat diakses menggunakan endpoint `/status`.
 
 #### 2.3 HARDWARE AND SOFTWARE INTEGRATION
 Integrasi dilakukan dengan menempelkan Sensor Node pada casing Motor DC menggunakan perekat industrial. Gateway ditempatkan terpisah. Proses *Pairing* antara Sensor dan Gateway terjadi secara otomatis saat *startup* berdasarkan pencocokan UUID Layanan BLE.
@@ -91,16 +89,21 @@ Integrasi dilakukan dengan menempelkan Sensor Node pada casing Motor DC mengguna
 ### CHAPTER 3: TESTING AND EVALUATION
 
 #### 3.1 TESTING
-Pengujian dilakukan dalam tiga skenario utama:
-1.  **Normal Operation:** Motor dijalankan pada kecepatan normal. Getaran terukur rata-rata 0.5 - 2.0 m/s². Relay tetap ON.
-2.  **Failure Simulation:** Beban tidak seimbang diberikan pada poros motor untuk menghasilkan getaran hebat.
-3.  **Connectivity Stress Test:** Router WiFi dimatikan saat sistem berjalan untuk menguji fungsi *Local Intelligence*.
+Pengujian dibagi dalam tiga kategori utama:
+1.  **Sensor Node Testing**  
+Kategori ini menguji bagian noda sensor dengan memverifikasi data mentah yang dibaca, menguji akurasi perhitungan, memvalidasi mekanisme manajemen daya, serta menguji stabilitas pengiriman paket data.
+2.  **Gateway Node Testing**  
+Kategori ini akan menguji kinerja TaskBLEManager, Memverifikasi TaskAppLogic, menguji responsivitas Relay serta Buzzer, dan melakukan stress test pada jaringan.
+3.  **Cloud and Notification Testing**  
+Kategori ini akan memverifikasi format pengiriman data, mengecek integritas data, menguji visualisasi data, serta menguji ketahanan mekanisme Mutex.
 
 #### 3.2 RESULT
-*   **Respon Keselamatan:** Pada simulasi kegagalan, Gateway berhasil mematikan motor dalam waktu rata-rata **850 milidetik** setelah getaran melonjak di atas 5.5 m/s².
-*   **Kestabilan Koneksi:** BLE stabil hingga jarak 8 meter tanpa halangan.
-*   **Cloud Logging:** Data kejadian "DANGER" berhasil muncul di respon API Flask dengan timestamp yang akurat.
-*   **Ketahanan Sistem:** Saat WiFi dimatikan, fungsi Relay dan Buzzer **tetap bekerja** normal berkat arsitektur FreeRTOS yang memisahkan logika kontrol dan logika jaringan.
+1.  **Sensor Node Testing**  
+Akses register manual pada sensor berhasil membaca data akselerasi, mekanisme manajemen daya berfungsi dengan baik, serta Transmisi data via BLE berjalan lancar.
+2.  **Gateway Node Testing**  
+TaskBLEManager mampu memindai dan menjaga koneksi, TaskAppLogic berhasil merespons data antrian dengan cepat, Buzzer berhasil aktif dan Fitur Local Intelligence berjalan dengan normal.
+3.  **Cloud and Notification Testing**  
+Data JSON sesuai dengan template, endpoint berhasil menjalankan tugasnya masing-masing, visualisasi data melalui blynk berhasil, dan Mutex berhasil mencegah konflik data.
 
 #### 3.3 EVALUATION
 Secara keseluruhan, sistem berfungsi sesuai rancangan. Penggunaan FreeRTOS sangat krusial dalam memastikan Gateway tidak *hang* saat mencoba menghubungkan ulang WiFi yang putus. Satu kendala yang ditemukan adalah konsumsi daya Sensor Node saat BLE Advertising masih cukup tinggi (~100mA), yang dapat dioptimalkan di masa depan dengan mengatur interval advertising yang lebih jarang.
@@ -114,7 +117,8 @@ Proyek **IOT22-SmartGuard** berhasil mendemonstrasikan penerapan teknologi IoT t
 ---
 
 ### REFERENCES
-1.  *FreeRTOS Documentation* (2024). "Task Management & Queues". Amazon Web Services.
-2.  *ESP32 Technical Reference Manual*. Espressif Systems.
-3.  *Blynk IoT Platform Documentation*.
-4.  Modul Praktikum IoT Laboratorium DTE FTUI (2024).
+- Random Nerd Tutorials, “ESP32 MPU-6050 Accelerometer and Gyroscope (Arduino) | Random Nerd Tutorials,” Random Nerd Tutorials, Jan. 12, 2021. [Online]. Available: ESP32 MPU-6050 Accelerometer and Gyroscope (Arduino) | Random Nerd Tutorials [Accessed: Dec. 07, 2025]
+- Random Nerd Tutorials, “ESP32 I2C Communication: Set Pins, Multiple Bus Interfaces and Peripherals | Random Nerd Tutorials,” Random Nerd Tutorials, Oct. 02, 2019.  [Online]. Available: ESP32 I2C Communication: Set Pins, Multiple Bus Interfaces and Peripherals | Random Nerd Tutorials. [Accessed: Dec. 07, 2025].
+Blynk, “Introduction - Blynk Documentation,” Blynk.io, 2022.  [Online]. Available: Introduction | Blynk Documentation. [Accessed: Dec. 08, 2025].
+- Espressif Systems,‌ “ESP-BLE-MESH - ESP32 - — ESP-IDF Programming Guide v5.2.3 documentation,” Espressif.com, 2016. [Online]. Available: ESP-BLE-MESH - ESP32 - — ESP-IDF Programming Guide v5.5.1 documentation. [Accessed: Dec. 08, 2025].
+- Random Nerd Tutorials, ‌“Arduino Guide for MPU-6050 Accelerometer and Gyroscope | Random Nerd Tutorials,” Random Nerd Tutorials, Feb. 16, 2021. [Online]. Available: Arduino Guide for MPU-6050 Accelerometer and Gyroscope | Random Nerd Tutorials. [Accessed: Dec. 08, 2025].

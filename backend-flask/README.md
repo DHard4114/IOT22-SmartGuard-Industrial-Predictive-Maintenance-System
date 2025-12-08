@@ -25,7 +25,7 @@ Dokumen ini menjelaskan fungsi dan cara penggunaan layanan backend yang dibangun
 		- `incident_history`: daftar insiden terbaru.
 	- Jika tidak, mengembalikan halaman HTML dengan badge status dan tabel riwayat.
 
-## Konfigurasi Lingkungan
+## Konfigurasi Environment (.env)
 - Variabel yang diperlukan: `DATABASE_URL` berisi koneksi Postgres (NeonDB).
 - Contoh `.env` (lokal):
 ```
